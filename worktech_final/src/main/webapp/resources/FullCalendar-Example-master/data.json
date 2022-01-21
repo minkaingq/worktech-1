@@ -1,0 +1,111 @@
+[{
+    "_id": 1,
+    "title": "거래처 미팅",
+    "description": "Lorem ipsum dolor sit incid idunt ut Lorem ipsum sit.",
+    "start": "2021-08-07T09:30",
+    "end": "2021-08-07T15:00",
+    "type": "중앙회의실",
+    "username": "다현",
+    "backgroundColor": "#D25565",
+    "textColor": "#ffffff",
+    "allDay": false
+  }, {
+    "_id": 2,
+    "title": "치과예약",
+    "description": "Lorem ipsum dolor sit incid idunt ut Lorem ipsum sit.",
+    "start": "2021-08-01T12:30",
+    "end": "2021-08-01T15:30",
+    "type": "중앙회의실",
+    "username": "나연",
+    "backgroundColor": "#9775fa",
+    "textColor": "#ffffff",
+    "allDay": false
+  }, {
+    "_id": 3,
+    "title": "철수 생일",
+    "description": "Lorem ipsum dolor sit incid idunt ut Lorem ipsum sit.",
+    "start": "2021-08-12",
+    "end": "2021-08-12",
+    "type": "회의실A",
+    "username": "다현",
+    "backgroundColor": "#ffa94d",
+    "textColor": "#ffffff",
+    "allDay": true
+  }, {
+    "_id": 4,
+    "title": "멜론 만기",
+    "description": "Lorem ipsum dolor sit incid idunt ut Lorem ipsum sit.",
+    "start": "2021-08-06",
+    "end": "2021-08-06",
+    "type": "회의실A",
+    "username": "지효",
+    "backgroundColor": "#74c0fc",
+    "textColor": "#ffffff",
+    "allDay": true
+  }, {
+    "_id": 5,
+    "title": "청약 입금",
+    "description": "Lorem ipsum dolor sit incid idunt ut Lorem ipsum sit.",
+    "start": "2021-08-08",
+    "end": "2021-08-08",
+    "type": "회의실B",
+    "username": "지효",
+    "backgroundColor": "#f06595",
+    "textColor": "#ffffff",
+    "allDay": true
+  }, {
+    "_id": 6,
+    "title": "카드값 납부",
+    "description": "Lorem ipsum dolor sit incid idunt ut Lorem ipsum sit.",
+    "start": "2021-08-14",
+    "end": "2021-08-14",
+    "type": "회의실A",
+    "username": "사나",
+    "backgroundColor": "#63e6be",
+    "textColor": "#ffffff",
+    "allDay": true
+  }, {
+    "_id": 7,
+    "title": "휴가",
+    "description": "Lorem ipsum dolor sit incid idunt ut Lorem ipsum sit.",
+    "start": "2021-08-18",
+    "end": "2021-08-20",
+    "type": "회의실C",
+    "username": "사나",
+    "backgroundColor": "#a9e34b",
+    "textColor": "#ffffff",
+    "allDay": true
+  },{
+    "_id": 8,
+    "title": "세차예약",
+    "description": "Lorem ipsum dolor sit incid idunt ut Lorem ipsum sit.",
+    "start": "2021-08-24T09:00",
+    "end": "2021-08-24T10:00",
+    "type": "회의실B",
+    "username": "정연",
+    "backgroundColor": "#4d638c",
+    "textColor": "#ffffff",
+    "allDay": false
+  },{
+    "_id": 9,
+    "title": "출장",
+    "description": "Lorem ipsum dolor sit incid idunt ut Lorem ipsum sit.",
+    "start": "2021-08-28",
+    "end": "2021-08-31",
+    "type": "회의실B",
+    "username": "정연",
+    "backgroundColor": "#495057",
+    "textColor": "#ffffff",
+    "allDay": true
+  },{
+    "_id": 10,
+    "title": "접수 기간",
+    "description": "Lorem ipsum dolor sit incid idunt ut Lorem ipsum sit.",
+    "start": "2021-08-15",
+    "end": "2021-08-22",
+    "type": "회의실A",
+    "username": "다현",
+    "backgroundColor": "#9775fa",
+    "textColor": "#ffffff",
+    "allDay": true
+  }]

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="toDoMapper">
+	<insert id="insertToDo">
+		insert into todo
+		values(SEQ_TODO.nextval, #{start},
+		#{description}, #{end}, #{mNo}, #{title},
+		#{type}, #{backgroundColor}, #{textColor}, #{share})
+	</insert>
+
+	<select id="getAllList" resultMap="toDoResultSet">
+		select todo.tno,
+		todo.tstartdate, todo.tcontent, todo.tenddate, todo.mno,
+		todo.ttitle, todo.ttype, todo.bgcolor, todo.textcolor,
+		todo.t_share, member.name
+		from todo
+		join member on(todo.mno =
+		member.m_no)
+		where todo.mno = #{mNo}
+		union
+		select todo.tno, todo.tstartdate, todo.tcontent, todo.tenddate,
+		todo.mno, todo.ttitle, todo.ttype, todo.bgcolor,
+		todo.textcolor, todo.t_share, member.name
+		from todo
+		join member
+		on(todo.mno = member.name)
+		where t_share='true'
+	</select>
+
+	<delete id="deleteToDo">
+		delete from todo
+		where mno = #{mNo}
+		and tNo = #{tNo}
+	</delete>
+
+	<update id="updateToDo">
+<!-- 		<if test="title==null or title.equals('null') or title.equals('')"> -->
+<!-- 			update todo -->
+<!-- 			set -->
+<!-- 			tstartdate = #{start}, -->
+<!-- 			tenddate = #{end} -->
+<!-- 			where tno = #{tNo} -->
+<!-- 			and empno = #{empNo} -->
+<!-- 		</if> -->
+<!-- 		<if test="title!=null"> -->
+			update todo
+			set
+			tstartdate = #{start},
+			tenddate = #{end},
+			ttitle = #{title},
+			ttype = #{type},
+			bgcolor = #{backgroundColor},
+			TCONTENT = #{description},
+			t_share = #{share}
+			where tno = #{tNo}
+			and mno = #{mNo}
+<!-- 		</if> -->
+	</update>
+
+	<select id="getTodaySchedule" resultMap="toDoResultSet">
+		select *
+		from todo
+		where tstartdate like sysdate || '%'
+		and mno = #{mNo}
+		order by tstartdate desc
+	</select>
+
+	<resultMap type="Todo" id="toDoResultSet">
+		<id column="TNO" property="tNo" />
+		<result column="TSTARTDATE" property="start" />
+		<result column="TCONTENT" property="description" />
+		<result column="TENDDATE" property="end" />
+		<result column="MNO" property="mNo" />
+		<result column="TTITLE" property="title" />
+		<result column="TTYPE" property="type" />
+		<result column="BGCOLOR" property="backgroundColor" />
+		<result column="TEXTCOLOR" property="textColor" />
+		<result column="NAME" property="username" />
+		<result column="t_share" property="share" />
+	</resultMap>
+
+</mapper>

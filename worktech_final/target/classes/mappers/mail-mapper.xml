@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="mailMapper">
+
+	<insert id="insertMailFile">
+		<if test="mailNo == 0"> <!-- 추가 -->
+		insert into MAIL_FILE 
+		values (SEQ_MAIL_FILE.nextval, #{mOriginalName}, #{mChangeName}, 
+				#{mFilePath}, sysdate, 'Y', SEQ_MAIL_TEMP.CURRVAL)
+		</if>
+		<if test="mailNo != 0"> <!-- tempupdate시 -->
+		insert into MAIL_FILE
+		values (SEQ_MAIL_FILE.nextval, #{mOriginalName}, #{mChangeName}, 
+				#{mFilePath}, sysdate, 'Y', #{mailNo})
+		</if>
+	</insert>
+	<update id="deleteMailFile">
+		UPDATE MAIL_FILE
+		SET ML_STATUS = 'N'
+		WHERE M_FILE_NO=#{mFileNo}
+	</update>
+	
+	
+	<update id="deleteMail" parameterType="hashmap">
+		<if test='!command.equals("templist")'>
+			update mail_s_r
+			set s_r_status='N'
+			where mailno=#{mailNo}
+			and MNO=#{mNo}
+		</if>
+		<if test='command.equals("templist")'>
+			update MAIL
+			set estatus='D'
+			where mailno=#{mailNo}
+			and MNO=#{mNo}
+			and estatus='T'
+		</if>
+	</update>
+	
+	<select id="searchEmp" resultMap="memberResultSet">
+		select * from MEMBER
+		where m_no like '%' || upper(#{keyword}) || '%'
+		OR NAME LIKE '%' || #{keyword} || '%'
+	</select>
+	
+	<insert id="insertMail">
+		insert into MAIL
+		values (SEQ_MAIL_TEMP.NEXTVAL, #{receiveEmp}, null, #{etitle}, 
+				#{econtent}, 'Y', #{mNo}, sysdate)
+	</insert>
+	<insert id="insertTempMail">
+		insert into MAIL
+		values (SEQ_MAIL_TEMP.NEXTVAL, #{receiveEmp}, null, #{etitle}, 
+				#{econtent}, 'T', #{mNo}, sysdate)
+	</insert>
+	<insert id="insertMailSRSender">
+		insert into mail_s_r
+		values (SEQ_MAIL_TEMP.CURRVAL, #{mNo}, 'S', null, null)	
+	</insert>
+	<insert id="insertMailSRReceiver">
+		insert into mail_s_r
+		values (SEQ_MAIL_TEMP.CURRVAL, #{mId}, 'R', null, null)
+	</insert>
+	
+	<select id="getDeleteListCount" resultType="_int">
+		select count(*)
+		from mail_S_R
+		where S_R_STATUS='N'
+		and MNO = #{mNo}
+	</select>
+	
+	<select id="getTempListCount" resultType="_int">
+		select count(*)
+		from mail
+		where estatus='T' 
+		and MNO = #{mNo}
+	</select>
+	
+	<select id="getSendListCount" resultType="_int">
+		select count(*)
+		from mail_s_r
+		where s_r_status='S' 
+		and MNO = #{mNo}
+	</select>
+	
+	<select id="getReceiveListCount" resultType="_int">
+		select count(*)
+		from mail_s_r
+		where s_r_status='R'
+		and MNO=#{email}
+	</select>
+	
+	<select id="getSearchListCount" resultType="_int">
+		<if test='command == "allmaillist"'>
+		select COUNT(DISTINCT MAILNO)
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		           MAIL_S_R.S_R_STATUS, MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(MAIL.MAILNO = mail_s_r.mailno)
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.MNO = #{mNo}
+		        AND (MAIL_S_R.S_R_STATUS = 'R' or MAIL_S_R.s_r_status = 'S')
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+		</if>
+		<if test='command == "deletemaillist"'>
+		select count(distinct MAILNO)
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		           MAIL_S_R.S_R_STATUS, MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno AND MAIL_S_R.S_R_STATUS='N')
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.MNO = #{mNo}
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+		</if>
+		<if test='command == "favoritesmaillist"'>
+		select count(distinct MAILNO)
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		           MAIL_S_R.S_R_STATUS, MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno)
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.MNO = #{mNo}
+		        AND (MAIL_S_R.S_R_STATUS = 'R' or MAIL_S_R.s_r_status = 'S')
+		        AND MAIL_S_R.FAVORITES = 'Y'
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC	
+		</if>
+		<if test='command == "receivemaillist"'>
+		select count(distinct MAILNO)
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		           MAIL_S_R.S_R_STATUS, MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno AND MAIL_S_R.S_R_STATUS='R')
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.MNO = #{mNo}
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+		</if>
+		<if test='command == "sendmaillist"'>
+		select count(distinct MAILNO)
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		           MAIL_S_R.S_R_STATUS, MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno AND MAIL_S_R.S_R_STATUS='S')
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.MNO = #{mNo}
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+		</if>
+		<if test='command == "tempmaillist"'>
+		select count(distinct MAILNO)
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		    where estatus='T'
+		    and MEMBER.M_No = #{mNo}
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+		</if>
+	</select>
+	
+	<select id="searchList" resultMap="mailResultSet">
+		<if test='command == "allmaillist"'>
+		<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, S_R_STATUS, FAVORITES, R_DATE
+		    , ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		           MAIL_S_R.S_R_STATUS, MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno)
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.mno = #{mNo}
+                AND (MAIL_S_R.S_R_STATUS = 'R' or MAIL_S_R.s_r_status = 'S')
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+		</if>
+		<if test='command == "deletemaillist"'>
+		<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, S_R_STATUS, FAVORITES, R_DATE
+		    , ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		           MAIL_S_R.S_R_STATUS, MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno AND MAIL_S_R.S_R_STATUS='N')
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.mno = #{mNo}
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+		</if>
+		<if test='command == "favoritesmaillist"'>
+		<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, S_R_STATUS, FAVORITES, R_DATE
+		    , ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		           MAIL_S_R.S_R_STATUS, MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno)
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.mno = #{mNo}
+		        AND (MAIL_S_R.S_R_STATUS = 'R' or MAIL_S_R.s_r_status = 'S')
+		        AND MAIL_S_R.FAVORITES = 'Y'
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+		</if>
+		<if test='command == "receivemaillist"'>
+		<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, S_R_STATUS, FAVORITES, R_DATE
+		    , ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		            MAIL_S_R.S_R_STATUS,  MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno AND MAIL_S_R.S_R_STATUS='R')
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.mno = #{mNo}
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+		</if>
+		<if test='command == "sendmaillist"'>
+		<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, S_R_STATUS, FAVORITES, R_DATE
+		    , ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		            MAIL_S_R.S_R_STATUS,  MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno AND MAIL_S_R.S_R_STATUS='S')
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.mno = #{mNo}
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+		</if>
+		<if test='command == "tempmaillist"'>
+		<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		    where estatus='T'
+		    and MEMBER.M_No = #{mNo}
+				AND (ETITLE LIKE '%' || #{searchValue} || '%' OR RECEIVEEMP LIKE '%' || upper(#{searchValue}) || '%' OR MEMBER.NAME LIKE '%' || upper(#{searchValue}) || '%')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+		</if>
+	</select>
+	
+
+	<select id="selectTempList" resultMap="mailResultSet">
+		<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		    where estatus='T'
+		    and MEMBER.M_No = #{mNo}
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+	</select>
+	
+	<select id="selectSendList" resultMap="mailResultSet">
+	<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, S_R_STATUS, FAVORITES, R_DATE
+		    , ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		            MAIL_S_R.S_R_STATUS,  MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno AND MAIL_S_R.S_R_STATUS='S')
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.MNo = #{mNo}
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+	</select>
+	
+	<select id="selectCheckList" resultMap="mailResultSet">
+		<!--  memname -->
+        select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, S_R_STATUS, FAVORITES, R_DATE
+		    , ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		            MAIL_S_R.S_R_STATUS,  MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno AND MAIL_S_R.S_R_STATUS='R')
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail.MNo = #{mNo}
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+	</select>
+	
+	<select id="getAllListCount" resultType="_int">
+		select count(*)
+		from mail_s_r
+		where mno = #{mNo}
+		AND (S_R_STATUS = 'R' or s_r_status = 'S')
+	</select>
+	
+	<select id="selectAllList" resultMap = "mailResultSet">
+		<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, S_R_STATUS, FAVORITES, R_DATE
+		    , ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		            MAIL_S_R.S_R_STATUS,  MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno)
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.MNo = #{mNo}
+                AND (MAIL_S_R.S_R_STATUS = 'R' or MAIL_S_R.s_r_status = 'S')
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+	</select>
+	
+	<select id="getFavoritesListCount" resultType="_int">
+		select count(distinct MAILNO)
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		            MAIL_S_R.S_R_STATUS,  MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno)
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.MNo = #{mNo}
+		        AND (MAIL_S_R.S_R_STATUS = 'R' or MAIL_S_R.s_r_status = 'S')
+		        AND MAIL_S_R.FAVORITES = 'Y'
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC	
+	</select>
+	
+	<select id="selectFavoritesList" resultMap="mailResultSet">
+		<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, S_R_STATUS, FAVORITES, R_DATE
+		    , ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		            MAIL_S_R.S_R_STATUS,  MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno)
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.MNo = #{mNo}
+		        AND (MAIL_S_R.S_R_STATUS = 'R' or MAIL_S_R.s_r_status = 'S')
+		        AND MAIL_S_R.FAVORITES = 'Y'
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC	
+	</select>
+	
+	<select id="selectCountNotRead" resultType="_int">
+		SELECT COUNT(*)
+		FROM MAIL_S_R
+		WHERE MNO = #{mNo}
+		AND S_R_STATUS = 'R'
+		AND R_DATE IS NULL
+	</select>
+	
+	<select id="selectReceiveList" resultMap="mailResultSet">
+		<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, S_R_STATUS, FAVORITES, R_DATE
+		    , ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		           MAIL_S_R.S_R_STATUS, MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno AND MAIL_S_R.S_R_STATUS='R')
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.mno = #{mNo}
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC
+	</select>
+	
+	<select id="selectDeleteList" resultMap="mailResultSet">
+		<!--  memname -->
+		select distinct MAILNO, RECEIVEEMP, ETYPE, ETITLE,
+		    ECONTENT, ESTATUS, MNO, S_DATE, NAME, S_R_STATUS, FAVORITES, R_DATE
+		    , ML_STATUS
+		from(
+		    select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+		           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+		           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_CHANGE_NAME, ML_STATUS,
+		            MAIL_S_R.S_R_STATUS,  MAIL_S_R.FAVORITES, R_DATE
+		    from mail
+		        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+		        join mail_s_r on(mail.mailno = mail_s_r.mailno AND MAIL_S_R.S_R_STATUS='N')
+		        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+		        WHERE ESTATUS='Y'
+		        AND mail_s_r.mno = #{mNo}
+		    order by MAILNO DESC
+		)
+		ORDER BY MAILNO DESC		
+	</select>
+		
+	<select id="selectTempMail" parameterType="_int" resultMap="mailResultSet">
+		select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+	           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+	           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_ORIGINAL_NAME, MAIL_FILE.M_CHANGE_NAME, MAIL_FILE.M_FILE_PATH, MAIL_FILE.M_UPLOAD_DATE, ML_STATUS
+	    from mail
+	        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+	        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+	    where estatus='T' and mail.mailno=#{id}
+        order by mail_file.m_file_no desc
+	</select>
+	
+	<update id="updateRDate">
+		<!-- 파라미터에 empNo 추가할 것.-->
+		update mail_s_r
+		set r_date = sysdate
+		where mailno = #{id}	
+		and mno = #{mNo}
+	</update>
+	
+	<select id="selectMailByMap" resultMap="mailResultSet">
+		select MAIL.MAILNO, MAIL.RECEIVEEMP, MAIL.ETYPE, MAIL.ETITLE,
+           MAIL.ECONTENT, MAIL.ESTATUS, MAIL.MNO, MAIL.S_DATE, MEMBER.NAME,
+           MAIL_FILE.M_FILE_NO, MAIL_FILE.M_ORIGINAL_NAME, MAIL_FILE.M_CHANGE_NAME, MAIL_FILE.M_FILE_PATH, MAIL_FILE.M_UPLOAD_DATE, ML_STATUS,
+            MAIL_S_R.S_R_STATUS,  MAIL_S_R.FAVORITES, R_DATE
+	    from mail
+	        join MEMBER ON(MAIL.MNO = MEMBER.M_NO)
+	        LEFT JOIN MAIL_FILE ON (MAIL.MAILNO = MAIL_FILE.MAILNO AND ML_STATUS='Y')
+	        join mail_s_r on (mail.mailno = mail_s_r.mailno)
+	    where estatus='Y' and mail.mailno=#{id}
+	    and MAIL_S_R.MNO = #{mNo}
+        order by mail_file.m_file_no desc
+	</select>
+	
+	<select id="selectMailFile" resultMap="mailFileResultSet">
+		select *
+		from mail_File
+		where m_file_no = #{mFileNo}
+	</select>
+	
+	<select id="getMId" resultMap="memberResultSet">
+		select *
+		from MEMBER
+		where m_no = #{mId}
+	</select>
+	
+	<update id="updateMail">
+		UPDATE MAIL
+		SET
+			RECEIVEEMP = #{receiveEmp},
+			ETITLE = #{etitle},
+			ECONTENT = #{econtent}
+		where mailNo = #{mailNo}
+	</update>
+	
+	<update id="updateFavorites">
+			UPDATE MAIL_S_R
+			SET favorites = #{favorites}
+			where mno = #{mNo}
+			and mailno = #{id}
+	</update>
+	
+	<resultMap type="Mail" id="mailResultSet">
+		<id column="MAILNO" property="mailNo"/>
+		<result column="RECEIVEEMP" property="receiveEmp"/>
+		<result column="ETYPE" property="etype"/>
+		<result column="ETITLE" property="etitle"/>
+		<result column="ECONTENT" property="econtent"/>
+		<result column="ESTATUS" property="estatus"/>
+		<result column="MNO" property="mNo"/>
+		<result column="S_DATE" property="sDate"/>
+		<result column="NAME" property="senderName"/>
+		<collection property="mailFileList" javaType="arraylist" resultMap="mailFileResultSet"></collection>
+		<collection property="mailSRList" javaType="arraylist" resultMap="mailSRResultSet"></collection>
+	</resultMap>
+	
+	<resultMap type="Member" id="memberResultSet">
+		<id column="M_NO" property="mNo"/>
+		<result column="EMAIL" property="email"/>
+		<result column="NAME" property="name"/>
+		<result column="PWD" property="pwd"/>
+		<result column="JOB_GRADE" property="jobGrade"/>
+		<result column="BIRTHDAY" property="birthDay"/>
+		<result column="PHONE" property="phone"/>
+		<result column="ADDRESS" property="address"/>
+		<result column="M_GRADE" property="mGrade"/>
+		<result column="D_NO" property="dNo"/>
+		<result column="D_NAME" property="dName"/>
+		<result column="M_HIRED" property="hireDate"/>
+		<result column="M_STATUS" property="mStatus"/>
+		<result column="M_EMAIL" property="mEmail"/>
+	</resultMap>
+	
+	<resultMap type="MailFile" id="mailFileResultSet">
+		<id column="M_FILE_NO" property="mFileNo"/>
+		<result column="M_ORIGINAL_NAME" property="mOriginalName"/>
+		<result column="M_CHANGE_NAME" property="mChangeName"/>
+		<result column="M_FILE_PATH" property="mFilePath"/>
+		<result column="M_UPLOAD_DATE" property="mUploadDate"/>
+		<result column="ML_STATUS" property="mlStatus"/>
+		<result column="MAILNO" property="mailNo"/>
+	</resultMap>
+
+	<resultMap type="MailSR" id="mailSRResultSet">
+		<id column="MAILNO" property="mailNo"/>
+		<id column="MNO" property="mNo"/>
+		<result column="S_R_STATUS" property="sRStatus"/>
+		<result column="FAVORITES" property="favorites"/>
+		<result column="R_DATE" property="rDate"/>
+	</resultMap>
+		
+</mapper>

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="adminMapper">
+	<select id="getDepartmentList" resultMap="departmentResultSet">
+		select *
+		from department
+		where d_status = 'Y'
+		and d_name != '전체'
+	</select>
+	
+	<resultMap type="Department" id="departmentResultSet">
+		<id column="D_NO" property="dNo"/>
+		<result column="D_NAME" property="dName"/>
+		<result column="D_PARENT" property="dParent"/>
+		<result column="D_DATE" property="dDate"/>
+		<result column="D_STATUS" property="dStatus"/>
+	</resultMap>
+	
+	<insert id="insertRvProduct">
+		insert into rv_product
+		values(SEQ_RVP.NEXTVAL, #{pdCategory}, #{pdName}, #{pdDate}, #{pdCount}, DEFAULT)
+	</insert>
+	
+	<insert id="insertRvRange">
+		insert into rv_pd_range
+		values(SEQ_RVP_RANGE.NEXTVAL, SEQ_RVP.CURRVAL, #{pdDNo}) 
+	</insert>
+	
+	<select id="getRvListCount" resultType="_int">
+		select count(*)
+		from rv_product
+		where pd_status = 'Y'
+		order by pd_no desc
+	</select>
+	
+	<select id="selectRvProductList" resultMap="rvProductResultSet">
+		select pd_no, pd_category, pd_name, pd_date, pd_count, pd_status, range_no, pd_dno
+		from rv_product 
+			 left join rv_pd_range using(pd_no)
+		where pd_status = 'Y'
+		order by pd_no desc
+	</select>
+	
+	<resultMap type="RvProduct" id="rvProductResultSet">
+		<id column="PD_NO" property="pdNo"/>
+		<result column="PD_CATEGORY" property="pdCategory"/>
+		<result column="PD_NAME" property="pdName"/>
+		<result column="PD_DATE" property="pdDate"/>
+		<result column="PD_COUNT" property="pdCount"/>
+		<result column="PD_STATUS" property="pdStatus"/>
+		<collection property="rvRange" resultMap="rvRangeResultSet" javaType="arrayList"/>
+	</resultMap>
+	
+	<resultMap type="RvRange" id="rvRangeResultSet">
+		<id column="RANGE_NO" property="rangeNo"/>
+		<result column="PD_NO" property="pdNo"/>
+		<result column="PD_DNO" property="pdDNo"/>
+		<result column="D_NAME" property="dName"/>
+	</resultMap>
+	
+	<select id="selectRvProduct" resultMap="rvProductResultSet">
+		select pd_no, pd_category, pd_name, pd_date, pd_count, pd_status, range_no, pd_dno, d_name
+		from rv_product 
+			 left join rv_pd_range using(pd_no)
+			 left join department on(pd_dno = d_no)
+		where pd_status = 'Y'
+			  and pd_no = #{pdNo}
+	</select>
+	
+	<update id="deleteRvProduct">
+		update rv_product set pd_status = 'N'
+		where pd_no = #{pdNo}
+	</update>
+	
+	<select id="getOriginRvRangeList" resultType="_int">
+		select pd_dno from rv_pd_range where pd_no = #{pdNO}
+	</select>
+	
+	<insert id="updateRvRange">
+		insert into rv_pd_range
+		values(SEQ_RVP_RANGE.NEXTVAL, #{pdNo}, #{pdDNo}) 
+	</insert>
+	
+	<delete id="deleteRvRange">
+		delete from rv_pd_range
+		where pd_no = #{pdNo} and pd_dno = #{pdDNo}
+	</delete>
+	
+	<update id="updateRvProduct">
+		update rv_product set pd_category = #{pdCategory}, pd_name = #{pdName}, pd_date = #{pdDate}, pd_count = #{pdCount}
+		where pd_no = #{pdNo}
+	</update>
+	
+	
+	<!-- 부서 목록 -->
+	<select id="selectDepList" resultMap="departmentResultSet">
+		select *
+		from department
+		where d_status = 'Y'
+		order by d_No asc
+	</select>
+	
+	<!-- 부서 구성원 수 -->
+	<select id="depCountList" resultType="_int">
+		select count(m_no)
+		from department
+		    left join member using(d_no)
+		where d_status='Y'
+		group by d_no
+		order by d_No asc
+	</select>
+	
+	<select id="depCount" resultType="_int">
+		select count(m_no)
+		from department
+		    left join member using(d_no)
+		where d_no = #{dNo} and d_status='Y'
+		group by d_no
+	</select>
+	
+	
+
+	<!-- 부서 등록 -->
+	<insert id="insertDepartment">
+		insert into department
+		values( SEQ_DEPT.nextval, #{dName}, #{dParent}, #{dDate}, default )
+	</insert>
+	
+	
+	<!-- 부서 이름 중복확인 -->
+	<select id="duplicateDName" resultType="_int">
+		select count(*)
+		from department
+		where d_name=#{dName}
+	</select>
+	
+	<!-- 부서 삭제 -->
+	<update id="deleteDep">
+		update department
+		set d_status='N'
+		where d_No=#{dNo}
+	</update>
+	
+</mapper>
