@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="adbookMapper">
+
+	<select id="getAdbookListCount" resultType="_int">
+		select count(*)
+		from member
+			 join department using(d_no)
+		where m_status = 'Y'
+			<if test='selectCategory == "dept"'>
+				and d_no = #{selectValue}
+			</if>
+			<if test='selectCategory == "job"'>
+				and job_grade = #{selectValue}
+			</if>
+	</select>
+	
+	<select id="selectAdbookList" resultMap="adbookResultSet">
+		select m_no, email, name, job_grade, phone, d_no, d_name, m_hired, 
+			   profile_no, p_url, p_name, p_rname
+		from member
+			 join department using(d_no)
+			 left join profile using(m_no)
+		where m_status = 'Y'
+			<if test='selectCategory == "dept"'>
+				and d_no = #{selectValue}
+			</if>
+			<if test='selectCategory == "job"'>
+				and job_grade = #{selectValue}
+			</if>
+		order by name
+	</select>
+	
+	<resultMap type="Member" id="adbookResultSet">
+		<id column="M_NO" property="mNo"/>
+		<result column="EMAIL" property="email"/>
+		<result column="NAME" property="name"/>
+		<result column="JOB_GRADE" property="jobGrade"/>
+		<result column="PHONE" property="phone"/>
+		<result column="D_NO" property="dNo"/>
+		<result column="D_NAME" property="dName"/>
+		<result column="M_HIRED" property="hireDate"/>
+		<association property="profile" resultMap="profileResultSet"/>
+	</resultMap>
+	
+	<resultMap type="Profile" id="profileResultSet">
+		<id column="PROFILE_NO" property="pNo"/>
+		<result column="P_URL" property="pUrl"/>
+		<result column="P_NAME" property="pName"/>
+		<result column="P_RNAME" property="pReName"/>
+		<result column="M_NO" property="mNo"/>
+	</resultMap>
+	
+	<select id="getSearchAdbookListCount" resultType="_int">
+		select count(*)
+		from member
+			 join department using(d_no)
+			 left join profile using(m_no)
+		where m_status = 'Y'
+			  and (name like '%'||#{value}||'%'
+			  	   or email like '%'||#{value}||'%' 
+			  	   or phone like '%'||#{value}||'%')
+	</select>
+		
+	<select id="selectSearchAdbookList" resultMap="adbookResultSet">
+		select m_no, email, name, job_grade, phone, d_no, d_name, m_hired, p_url
+		from member
+			 join department using(d_no)
+			 left join profile using(m_no)
+		where m_status = 'Y'
+			  and (name like '%'||#{value}||'%'
+			  	   or email like '%'||#{value}||'%' 
+			  	   or phone like '%'||#{value}||'%')
+		order by m_no
+	</select>
+	
+	<insert id="insertpAdbook">
+		insert into adbook
+		values(seq_ad.nextval, #{adName}, #{adCompany}, #{adPhone}, #{adEmail}, #{adDept}, #{adJob}, #{adWriter}, default)
+	</insert>
+	
+	<select id="getpAdbookListCount" resultType="_int">
+		select count(*)
+		from adbook
+		where ad_writer = #{mNo}
+			  and ad_status = 'Y'
+	</select>
+	
+	<select id="selectpAdbookList" resultMap="pAdbookResultSet">
+		select *
+		from adbook
+		where ad_writer = #{mNo}
+			  and ad_status = 'Y'
+		order by ad_no desc
+	</select>
+	
+	<resultMap type="Adbook" id="pAdbookResultSet">
+		<id column="AD_NO" property="adNo"/>
+		<result column="AD_NAME" property="adName"/>
+		<result column="AD_COMPANY" property="adCompany"/>
+		<result column="AD_PHONE" property="adPhone"/>
+		<result column="AD_EMAIL" property="adEmail"/>
+		<result column="AD_DEPT" property="adDept"/>
+		<result column="AD_JOB" property="adJob"/>
+		<result column="AD_WRITER" property="adWriter"/>
+		<result column="AD_STATUS" property="adStatus"/>
+	</resultMap>
+	
+	<select id="selectpAdbookDetail" resultMap="pAdbookResultSet">
+		select *
+		from adbook
+		where ad_no = #{adNo}
+	</select>
+	
+	<update id="updatepAdbook">
+		update adbook
+		set ad_name = #{adName},
+			ad_company = #{adCompany},
+			ad_phone = #{adPhone},
+			ad_email = #{adEmail},
+			ad_dept = #{adDept},
+			ad_job = #{adJob}
+		where ad_no = #{adNo}
+	</update>
+	
+	<update id="deletepAdbook">
+		update adbook
+		set ad_status = 'N'
+		where ad_no = #{adNo}
+	</update>
+	
+	<select id="checkpAdDup" resultType="_int">
+		select count(*)
+		from adbook
+		<where>
+			ad_status = 'Y'
+			and ad_writer = #{adWriter}
+			<if test="adNo != null">
+				and ad_no != #{adNo}
+			</if>
+			<if test="phone != null">
+				and (ad_phone = #{phone}
+			</if>
+			<if test="email != null">
+				or ad_email = #{email})
+			</if>
+		</where>
+	</select>
+	
+	<select id="getSearchpAdbookListCount" resultType="_int">
+		select count(*)
+		from adbook
+		where ad_status = 'Y'
+			  and ad_writer = #{adWriter}
+			  and (ad_name like '%'||#{searchValue}||'%'
+			  or ad_company like '%'||#{searchValue}||'%'
+			  or ad_phone like '%'||#{searchValue}||'%'
+			  or ad_email like '%'||#{searchValue}||'%'
+			  or ad_dept like '%'||#{searchValue}||'%'
+			  or ad_job like '%'||#{searchValue}||'%')
+	</select>
+	
+	<select id="selectSearchpAdbookList" resultMap="pAdbookResultSet">
+		select *
+		from adbook
+		where ad_status = 'Y'
+			  and ad_writer = #{adWriter}
+			  and (ad_name like '%'||#{searchValue}||'%'
+			  or ad_company like '%'||#{searchValue}||'%'
+			  or ad_phone like '%'||#{searchValue}||'%'
+			  or ad_email like '%'||#{searchValue}||'%'
+			  or ad_dept like '%'||#{searchValue}||'%'
+			  or ad_job like '%'||#{searchValue}||'%')
+		order by ad_no desc
+	</select>
+	
+	<select id="selectAdbookMainList" resultMap="adbookResultSet">
+		select *
+		from (select m_no, email, name, job_grade, phone, d_no, d_name, m_hired, 
+			  	     profile_no, p_url, p_name, p_rname
+			  from member
+				   left join department using(d_no)
+				   left join profile using(m_no)
+			  where m_status = 'Y'
+			  		and m_no != #{mNo}
+			  		and m_grade = 'USER'
+			  order by m_no)
+		where rownum <![CDATA[<=]]> 6
+	</select>
+</mapper>

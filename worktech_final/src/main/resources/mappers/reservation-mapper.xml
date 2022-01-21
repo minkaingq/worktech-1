@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="reservationMapper">
+	<select id="getRvMeetingRoomList" resultMap="rvMeetingRoomResultSet">
+		select rv_no, rv_type, rv_name, rv_date, rv_start_time, rv_end_time, rv_usage, rv_member, rv_status, 
+			   d_name || ' ' || name || ' ' || job_grade as rv_member_full_name
+		from reservation join 
+			 member on (rv_member = m_no) left join
+			 department using(d_no)
+		where rv_type = 'MEETING'
+			  and rv_status = 'N'
+	</select>
+	
+	<resultMap type="Reservation" id="rvMeetingRoomResultSet">
+		<id column="rv_no" property="rvNo"/>
+		<result column="rv_type" property="rvType"/>
+		<result column="rv_name" property="rvName"/>
+		<result column="rv_date" property="rvDate"/>
+		<result column="rv_start_time" property="rvStartTime"/>
+		<result column="rv_end_time" property="rvEndTime"/>
+		<result column="rv_usage" property="rvUsage"/>
+		<result column="rv_member" property="rvMember"/>
+		<result column="rv_member_full_name" property="rvMemberFullName"/>
+		<result column="rv_status" property="rvStatus"/>
+	</resultMap>
+
+	<insert id="insertReservation">
+		insert into reservation
+		values (SEQ_RV.NEXTVAL, #{rvType}, #{rvpNo}, #{rvName}, #{rvCount}, #{rvDate}, #{rvStartTime}, #{rvEndTime}, #{rvUsage}, #{rvMember}, DEFAULT)
+	</insert>
+	
+	<select id="selectReservation" resultMap="rvResultSet">
+		select rv_no, rv_type, rvp_no, rv_name, rv_count, rv_date, rv_start_time, rv_end_time, 
+			   rv_usage, rv_member, rv_status, 
+			   d_name || ' ' || name || ' ' || job_grade as rv_member_full_name
+		from reservation join 
+			 member on (rv_member = m_no) left join
+			 department using(d_no)
+		where rv_no = #{rvNo}
+			  and rv_status = 'N'
+	</select>
+	
+	<resultMap type="Reservation" id="rvResultSet">
+		<id column="rv_no" property="rvNo"/>
+		<result column="rv_type" property="rvType"/>
+		<result column="rvp_no" property="rvpNo"/>
+		<result column="rv_name" property="rvName"/>
+		<result column="rv_count" property="rvCount"/>
+		<result column="rv_date" property="rvDate"/>
+		<result column="rv_start_time" property="rvStartTime"/>
+		<result column="rv_end_time" property="rvEndTime"/>
+		<result column="rv_usage" property="rvUsage"/>
+		<result column="rv_member" property="rvMember"/>
+		<result column="rv_member_full_name" property="rvMemberFullName"/>
+		<result column="rv_status" property="rvStatus"/>
+	</resultMap>
+	
+	<update id="deleteReservation">
+		update reservation set rv_status = 'Y'
+		where rv_no = #{rvNo}
+	</update>
+	
+	<select id="selectOrvList" resultMap="orvResultSet">
+		select *
+		from rv_product
+		where pd_status = 'Y'
+	</select>
+	
+	<resultMap type="RvProduct" id="orvResultSet">
+		<id column="PD_NO" property="pdNo"/>
+		<result column="PD_CATEGORY" property="pdCategory"/>
+		<result column="PD_NAME" property="pdName"/>
+		<result column="PD_DATE" property="pdDate"/>
+		<result column="PD_COUNT" property="pdCount"/>
+		<result column="PD_STATUS" property="pdStatus"/>
+	</resultMap>
+
+ 	<select id="selectFormOrvList" resultMap="orvResultSet">
+		select *
+		from rv_product
+		where pd_no = #{pdNo} and pd_status = 'Y'
+	</select> 
+	
+	<insert id="insertOtherReservation">
+		insert into reservation
+		values (SEQ_RV.NEXTVAL, #{rvType}, #{rvpNo}, #{rvName}, #{rvCount}, SYSDATE, SYSDATE, SYSDATE, #{rvUsage}, #{rvMember}, DEFAULT)
+	</insert>
+	
+	<select id="getOrvList" resultMap="otherReservationResultSet">
+		select rv_no, rv_type, rv_name, rv_count, rv_date, rv_start_time, rv_end_time, rv_usage, rv_member, rv_status
+		from reservation 
+		where rv_type = 'ETC' 
+	</select>
+	
+	<resultMap type="Reservation" id="otherReservationResultSet">
+		<id column="rv_no" property="rvNo"/>
+		<result column="rv_type" property="rvType"/>
+		<result column="rvp_no" property="rvpNo"/>
+		<result column="rv_name" property="rvName"/>
+		<result column="rv_count" property="rvCount"/>
+		<result column="rv_date" property="rvDate"/>
+		<result column="rv_start_time" property="rvStartTime"/>
+		<result column="rv_end_time" property="rvEndTime"/>
+		<result column="rv_usage" property="rvUsage"/>
+		<result column="rv_member" property="rvMember"/>
+		<result column="rv_status" property="rvStatus"/>
+	</resultMap>
+	
+	<update id="getCountUpdate">
+		update rv_product
+		set pd_count = pd_count-#{rvCount}
+		where pd_no=#{rvpNo}
+	</update>
+	
+	<select id="selectMyOrvList" resultMap="myOrvResultSet">
+		select rv_no, rv_type, rvp_no, rv_name, rv_date, rv_start_time, 
+				rv_end_time, rv_usage, rv_member, rv_status, pd_category as rv_category
+		from reservation
+			 join rv_product on(rvp_no = pd_no)
+		where rv_type = 'ETC' and rv_member=#{rvMember}
+			  and rv_date >= to_char(sysdate-7, 'yymmdd')
+		order by rv_status 
+	</select>
+	
+	<resultMap type="Reservation" id="myOrvResultSet">
+		<id column="rv_no" property="rvNo"/>
+		<result column="rv_type" property="rvType"/>
+		<result column="rvp_no" property="rvpNo"/>
+		<result column="rv_name" property="rvName"/>
+		<result column="rv_count" property="rvCount"/>
+		<result column="rv_date" property="rvDate"/>
+		<result column="rv_start_time" property="rvStartTime"/>
+		<result column="rv_end_time" property="rvEndTime"/>
+		<result column="rv_usage" property="rvUsage"/>
+		<result column="rv_member" property="rvMember"/>
+		<result column="rv_status" property="rvStatus"/>
+		<result column="rv_category" property="rvCategory"/>
+	</resultMap>
+	
+	<select id="myOrvDetail" resultMap="otherReservationResultSet">
+		select * 
+		from reservation
+		where rv_no = #{rvNo}
+	</select>
+	
+	<update id="myOrvListDelete">
+		update reservation
+		set rv_status = 'Y'
+		where rv_member=#{rvMember} and rv_no=#{rvNo}
+	</update>
+	
+	<update id="getCountDelete">
+		update rv_product
+		set pd_count = pd_count+#{rvCount}
+		where pd_no=#{rvpNo}
+	</update>
+	
+	<update id="updateMyOtherReservation">
+		update reservation
+		set rv_status = 'Y'
+		where to_char(rv_end_time, 'YY-MM-DD HH24:MI') = to_char(sysdate, 'YY-MM-DD HH24:MI')
+	</update>
+	
+</mapper>

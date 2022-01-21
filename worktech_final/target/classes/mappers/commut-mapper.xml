@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="commutMapper">
+   <insert id="insertQRCode">
+      insert into qrcode values(seq_qr.nextval, #{file_name}, #{file_path}, #{m_no}, default)
+   </insert>
+   <select id="selectQRCode" resultMap="qrcodeResultSet">
+      select *
+      from qrcode
+      where m_no = #{m_no} and q_status = 'Y'
+   </select>
+   
+   <resultMap type="QRCode" id="qrcodeResultSet">
+      <id column="Q_NO" property="q_no"/>
+      <result column="FILE_NAME" property="file_name"/>
+      <result column="FILE_PATH" property="file_path"/>
+      <result column="M_NO" property="m_no"/>
+      <result column="Q_STATUS" property="q_status"/>
+   </resultMap>
+   
+   <select id="selectQstatus" resultMap="qrcodeResultSet">
+      select *
+      from qrcode
+      where m_no = #{getmNo} and q_status = 'Y'
+   </select>
+   
+   
+   <insert id="insertGoWork">
+   	insert into
+   	commut values(seq_commut.nextval, sysdate, #{goWork}, null, #{mNo}, 0)
+   </insert>
+   
+    <update id="updateLeaveWork">
+   	update commut
+   	set leave_work = #{leaveWork}
+   	where m_no=#{mNo} and to_date(commut_date, 'YY/MM/DD') = to_date(sysdate, 'YY/MM/DD')
+   </update> 
+   
+    <select id="selectGowork" resultMap="commutResultSet">
+   		select *
+   		from commut
+   		where m_no = #{mNo} and to_date(commut_date, 'YY/MM/DD') = to_date(sysdate, 'YY/MM/DD')
+   </select>
+   
+   <resultMap type="Commut" id="commutResultSet">
+   	  <id column="COMMUT_NO" property="CommutNo"/>
+      <result column="COMMUT_DATE" property="commutDate"/>
+      <result column="GO_WORK" property="goWork"/>
+      <result column="LEAVE_WORK" property="leaveWork"/>
+      <result column="M_NO" property="mNo"/>
+      <result column="ATTEND_TYPE" property="attendType"/>
+   </resultMap> 
+</mapper>

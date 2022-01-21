@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="approvalMapper">
+	<select id="selectMainList" resultMap="approvalResultSet">
+	select *
+	from(
+		select app_title, name, app_date, d_name, job_grade, app_no
+		from approval
+			 join member on (app_writer = m_no)
+			 join department using (d_no)
+		where m_no = #{mNo} and app_result = '0'
+		order by app_no desc)
+	<![CDATA[where rownum <= 3]]>
+	</select>
+	
+	
+	<select id="getListCountWait" resultType="_int">
+		select count(*)
+		from approval
+			 join member on (app_writer = m_no)
+			 join department using (d_no)
+		where app_li_member = #{mNo} and app_result = '0' and app_delete = 'N'
+	</select>
+	
+	<select id="getListCountProgress" resultType="_int">
+		select count(*)
+		from approval
+			 join member on (app_writer = m_no)
+			 join department using (d_no)
+		where app_writer = #{mNo} and app_result = '0' and app_delete = 'N'
+	</select>
+	
+	<select id="getListCountComplete" resultType="_int">
+		select count(*)
+		from approval
+			 join member on (app_writer = m_no)
+			 join department using (d_no)
+		where (app_writer = #{mNo} or app_li_member = #{mNo}) and (app_result = '2' or app_result = '3') and app_delete = 'N'
+	</select>
+	
+	<select id="selectWaitList" resultMap="approvalResultSet">
+		select app_title, name, app_date, d_name, job_grade, app_no, app_result
+		from approval
+			 join member on (app_writer = m_no)
+			 join department using (d_no)
+		where app_li_member = #{ mNo } and (app_result = '0' or app_result = '1') and app_delete = 'N'
+		order by app_no desc
+	</select>
+	
+	<select id="selectProgressList" resultMap="approvalResultSet">
+		select app_title, name, app_date, d_name, job_grade, app_no, app_result
+		from approval
+     		 left outer join member on (app_writer = m_no)
+	 		 join department using (d_no)
+		where app_writer = #{mNo} and (app_result = '0' or app_result = '1') and app_delete = 'N'
+		order by app_no desc
+	</select>
+	
+	<select id="selectCompleteList" resultMap="approvalResultSet">
+		select app_title, name, app_date, d_name, job_grade, app_no, app_result
+		from approval
+     		 join member on (app_writer = m_no)
+	 		 join department using (d_no)
+		where (app_writer = #{mNo} or app_li_member = #{mNo}) and (app_result = '2' or app_result = '3') and app_delete = 'N'
+		order by app_no desc
+	</select>
+	
+	<insert id="insertApproval">
+		insert into approval
+		values(SEQ_APP.NEXTVAL, #{appTitle}, #{appContent}, #{appWriter}, '0', 'N', sysdate, #{appLiMember}, #{appLiMemberName}, #{appRefMember}, #{appRefMemberName})
+	</insert>
+	
+	<insert id="insertApprovalFile">
+		insert into form
+		values(SEQ_FORM.NEXTVAL, #{formURL}, #{formName}, #{formRname}, SEQ_APP.CURRVAL)
+	</insert>
+	
+	<select id="selectApproval" resultMap="approvalResultSet">
+		select app_no, app_title, app_content, app_writer, app_result, app_delete, app_date, app_li_member, app_li_membername, app_ref_member, app_ref_membername, name, d_name, job_grade, form_no, form_url, form_name, form_rname
+		from approval
+			 left outer join member on (app_writer = m_no)
+			 join department using (d_no)
+    		 left join form using (app_no)
+		where app_delete = 'N' and app_no = #{appNo}
+	</select>
+	
+	<resultMap type="Approval" id="approvalResultSet">
+		<id column="APP_NO" property="appNo"/>
+		<result column="APP_TITLE" property="appTitle"/>
+		<result column="APP_CONTENT" property="appContent"/>
+		<result column="APP_WRITER" property="appWriter"/>
+		<result column="NAME" property="mName"/>	
+		<result column="D_NAME" property="dName"/>
+		<result column="JOB_GRADE" property="jobGrade"/>
+		<result column="APP_RESULT" property="appResult"/>	
+		<result column="APP_DELETE" property="appDelete"/>	
+		<result column="APP_DATE" property="appDate"/>
+		<result column="APP_LI_MEMBER" property="appLiMember"/>
+		<result column="APP_LI_MEMBERNAME" property="appLiMemberName"/>
+		<result column="APP_REF_MEMBER" property="appRefMember"/>
+		<result column="APP_REF_MEMBERNAME" property="appRefMemberName"/>
+		<collection property="fileList" resultMap="formResultSet" javaType="arrayList"/>
+	</resultMap>
+
+	<resultMap type="Form" id="formResultSet">
+		<id column="FORM_NO" property="formNo"/>
+		<result column="FORM_URL" property="formURL"/>
+		<result column="FORM_NAME" property="formName"/>
+		<result column="FORM_RNAME" property="formRname"/>
+		<result column="APP_NO" property="appNo"/>
+	</resultMap>
+
+	<delete id="deleteForm">
+		delete from form
+		where form_no = #{formNo}
+	</delete>
+	
+	<update id="updateApproval">
+		update approval
+		set app_title = #{appTitle}, app_content = #{appContent}, app_li_member = #{appLiMember}, app_li_membername = #{appLiMemberName}, app_ref_member = #{appRefMember}, app_ref_membername = #{appRefMemberName}
+		where app_no = #{appNo} and app_delete = 'N'
+	</update>
+	
+	<insert id="updateApprovalFile">
+        insert into form
+		values(SEQ_form.NEXTVAL, #{formURL}, #{formName}, #{formRname}, #{appNo})
+	</insert>
+	
+	<update id="ApprovalApp">
+		update approval
+		set app_result= '2'
+		where app_no = #{appNo} and app_delete = 'N'
+	</update>	
+	
+	<update id="ApprovalReturn">
+		update approval
+		set app_result= '3'
+		where app_no = #{appNo} and app_delete = 'N'
+	</update>	
+	
+	<update id="deleteApproval">
+		update approval
+		set app_delete = 'Y'
+		where app_no = #{appNo}
+	</update>		
+</mapper>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd" >
+<configuration>
+	<settings>
+		<setting name="jdbcTypeForNull" value="NULL"/>
+	</settings>
+	
+	<typeAliases>
+		<typeAlias type="com.groupware.worktech.board.model.vo.Board" alias="Board"/>
+		<typeAlias type="com.groupware.worktech.board.model.vo.BoardFile" alias="BoardFile"/>
+		<typeAlias type="com.groupware.worktech.admin.model.vo.Department" alias="Department"/>
+		<typeAlias type="com.groupware.worktech.member.model.vo.Member" alias="Member"/>
+		<typeAlias type="com.groupware.worktech.admin.model.vo.RvProduct" alias="RvProduct"/>
+		<typeAlias type="com.groupware.worktech.admin.model.vo.RvRange" alias="RvRange"/>
+		<typeAlias type="com.groupware.worktech.chat.model.vo.ChatRoom" alias="ChatRoom"/>
+		<typeAlias type="com.groupware.worktech.chat.model.vo.GatheringMember" alias="GatheringMember"/>
+		<typeAlias type="com.groupware.worktech.board.model.vo.Reply" alias="Reply"/>
+		<typeAlias type="com.groupware.worktech.chat.model.vo.ChatMessage" alias="ChatMessage"/>
+		<typeAlias type="com.groupware.worktech.adbook.model.vo.Adbook" alias="Adbook"/>
+		<typeAlias type="com.groupware.worktech.approval.model.vo.Approval" alias="Approval"/>
+		<typeAlias type="com.groupware.worktech.approval.model.vo.Form" alias="Form"/>
+		<typeAlias type="com.groupware.worktech.reservation.model.vo.Reservation" alias="Reservation"/>
+		<typeAlias type="com.groupware.worktech.alarm.model.vo.Alarm" alias="Alarm"/>
+		<typeAlias type="com.groupware.worktech.commut.model.vo.QRCode" alias="QRCode"/>
+		<typeAlias type="com.groupware.worktech.member.model.vo.Profile" alias="Profile"/>
+		<typeAlias type="com.groupware.worktech.mail.model.vo.Mail" alias="Mail"/>
+		<typeAlias type="com.groupware.worktech.mail.model.vo.MailFile" alias="MailFile"/>
+		<typeAlias type="com.groupware.worktech.mail.model.vo.MailSR" alias="MailSR"/>
+		<typeAlias type="com.groupware.worktech.commut.model.vo.Commut" alias="Commut"/>
+		<typeAlias type="com.groupware.worktech.calendar.model.vo.Calendar" alias="Calendar"/>
+		<typeAlias type="com.groupware.worktech.todo.model.vo.ToDo" alias="Todo"/>
+		<typeAlias type="com.groupware.worktech.board.model.vo.Category" alias="Category"/>
+	</typeAliases>
+	
+	<mappers>
+		<mapper resource="mappers/board-mapper.xml"/>
+		<mapper resource="mappers/member-mapper.xml"/>
+		<mapper resource="mappers/admin-mapper.xml"/>
+		<mapper resource="mappers/chat-mapper.xml"/>
+		<mapper resource="mappers/adbook-mapper.xml"/>
+		<mapper resource="mappers/approval-mapper.xml"/>
+		<mapper resource="mappers/reservation-mapper.xml"/>
+		<mapper resource="mappers/alarm-mapper.xml"/>
+		<mapper resource="mappers/commut-mapper.xml"/>
+		<mapper resource="mappers/mail-mapper.xml"/>
+		<mapper resource="mappers/calendar-mapper.xml"/>
+		<mapper resource="mappers/todo-mapper.xml"/>
+	</mappers>
+	
+</configuration>
